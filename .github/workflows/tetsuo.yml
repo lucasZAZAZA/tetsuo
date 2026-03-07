@@ -1,0 +1,27 @@
+name: Tetsuo — Reflexión autónoma
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Cada 6 horas
+  workflow_dispatch:        # También se puede ejecutar manualmente
+
+jobs:
+  reflexionar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v3
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Ejecutar reflexión
+        env:
+          POCKETBASE_PASSWORD: ${{ secrets.POCKETBASE_PASSWORD }}
+        run: node reflexion.js
