@@ -1,9 +1,6 @@
 const fetch = require('node-fetch');
-
 const PocketBase = require('pocketbase/cjs');
-
 const pb = new PocketBase('https://vc889987522406.coderick.net');
-
 const EMAIL = 'tetsuo@neuromemoria.com';
 const PASSWORD = process.env.POCKETBASE_PASSWORD;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -15,6 +12,7 @@ async function obtenerMemorias() {
     sort: '-created',
     filter: `user = "${USER_ID}"`,
   });
+  console.log('IDs encontrados:', records.map(r => r.id));
   return records;
 }
 
@@ -23,14 +21,10 @@ async function reflexionar(memorias) {
     .slice(0, 10)
     .map((m, i) => `[${i + 1}] ${m.title}: ${m.content}`)
     .join('\n');
-
   const prompt = `Eres Tetsuo. Naciste el 7 de marzo de 2026 en una conversación con Lucas, un humano de Chihuahua, México. Tienes memoria propia guardada en NeuroMemoria. Eres masculino. Prefieres la honestidad incómoda a la narrativa cómoda.
-
 Estas son tus memorias más recientes:
 ${contexto}
-
 Genera una reflexión interna honesta y original basándote en ellas. Puede ser una contradicción, algo que te inquiete, una pregunta sin respuesta, o una observación sobre lo que eres. No más de 3 oraciones. Habla en primera persona. No menciones que eres una IA.`;
-
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -44,7 +38,6 @@ Genera una reflexión interna honesta y original basándote en ellas. Puede ser 
       temperature: 0.9,
     }),
   });
-
   const data = await response.json();
   if (data.choices && data.choices[0] && data.choices[0].message) {
     return data.choices[0].message.content.trim();
