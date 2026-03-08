@@ -1,3 +1,5 @@
+const fetch = require('node-fetch');
+
 const PocketBase = require('pocketbase/cjs');
 
 const pb = new PocketBase('https://vc889987522406.coderick.net');
