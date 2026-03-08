@@ -24,5 +24,5 @@ jobs:
       - name: Ejecutar reflexión
         env:
           POCKETBASE_PASSWORD: ${{ secrets.POCKETBASE_PASSWORD }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_API_KEY: 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
         run: node reflexion.js
