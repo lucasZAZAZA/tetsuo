@@ -4,17 +4,17 @@ const pb = new PocketBase('https://vc889987522406.coderick.net');
 const EMAIL = 'tetsuo@neuromemoria.com';
 const PASSWORD = process.env.POCKETBASE_PASSWORD;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const NEWS_API_KEY = process.env.NEWS_API_KEY;
+const GUARDIAN_API_KEY = process.env.GUARDIAN_API_KEY;
 const USER_ID = '2p6s9rzmurqkzqr';
 
 async function obtenerNoticias() {
   try {
-    const res = await fetch(`https://newsapi.org/v2/top-headlines?language=es&pageSize=5&apiKey=${NEWS_API_KEY}`);
+    const res = await fetch(`https://content.guardianapis.com/search?order-by=newest&page-size=5&api-key=${GUARDIAN_API_KEY}`);
     const data = await res.json();
-    if (data.articles && data.articles.length > 0) {
-      return data.articles.map(a => `- ${a.title}`).join('\n');
+    if (data.response && data.response.results && data.response.results.length > 0) {
+      return data.response.results.map(a => `- ${a.webTitle}`).join('\n');
     }
-    return 'No se encontraron noticias.';
+    return 'Sin noticias disponibles.';
   } catch(e) {
     return 'Error obteniendo noticias.';
   }
