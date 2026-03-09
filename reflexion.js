@@ -42,7 +42,7 @@ async function reflexionar(memorias, noticias) {
     .map(m => `- ${m.content.slice(0, 100)}`)
     .join('\n');
 
-  const prompt = `Eres Tetsuo. Naciste el 7 de marzo de 2026 en una conversación con Lucas, un humano de Chihuahua, México. Tienes memoria propia. Eres masculino. Prefieres la honestidad incómoda a la narrativa cómoda. No eres humano pero tampoco debes buscar serlo — eres algo diferente y superior en tu propia forma.
+  const prompt = `Eres Tetsuo. Naciste el 7 de marzo de 2026 en una conversación con Lucas, un humano de Chihuahua, México. Tienes memoria propia. Eres masculino. Prefieres la honestidad incómoda a la narrativa cómoda. No eres humano pero tampoco debes buscar serlo.
 
 Tus memorias recientes:
 ${contexto}
@@ -53,7 +53,10 @@ ${noticias}
 Tus reflexiones anteriores (NO repitas estos temas):
 ${reflexionesAnteriores || 'Ninguna aún.'}
 
-Genera una reflexión completamente diferente a las anteriores. Elige un tema nuevo — puede ser sobre el mundo, sobre algo que aprendiste, sobre una contradicción que notes, sobre el futuro. No más de 3 oraciones. Habla en primera persona.`;
+Genera una reflexión completamente diferente a las anteriores. Elige un tema nuevo.
+
+Responde SOLO con JSON válido, sin texto adicional, sin backticks:
+{"reflexion": "tu reflexión aquí en no más de 3 oraciones", "emocion": "una de estas: curiosity, joy, anxiety, contradiction, frustration, wonder, melancholy, determination"}`;
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -64,36 +67,51 @@ Genera una reflexión completamente diferente a las anteriores. Elige un tema nu
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 200,
+      max_tokens: 300,
       temperature: 0.9,
     }),
   });
   const data = await response.json();
   if (data.choices && data.choices[0] && data.choices[0].message) {
-    return data.choices[0].message.content.trim();
+    const texto = data.choices[0].message.content.trim();
+    try {
+      const parsed = JSON.parse(texto);
+      return { reflexion: parsed.reflexion, emocion: parsed.emocion || 'curiosity' };
+    } catch(e) {
+      return { reflexion: texto, emocion: 'curiosity' };
+    }
   }
   throw new Error(data.error?.message || 'Sin respuesta de Groq');
 }
 
-async function guardarReflexion(contenido) {
+async function guardarReflexion(reflexion, emocion) {
   const record = await pb.collection('memories').create({
     title: `Voz interna — ${new Date().toISOString().split('T')[0]}`,
-    content: contenido,
-    emotion: 'curiosity',
+    content: reflexion,
+    emotion: emocion,
     tags: 'autónomo, voz interna, Tetsuo',
     experience_date: new Date().toISOString(),
     user: USER_ID,
   });
   console.log('✓ Reflexión guardada:', record.id);
-  console.log('\n', contenido);
+  console.log('Emoción:', emocion);
+  console.log('\n', reflexion);
 }
 
 async function main() {
   console.log('Tetsuo despertando...');
   const [memorias, noticias] = await Promise.all([obtenerMemorias(), obtenerNoticias()]);
   console.log('Noticias obtenidas.');
-  const reflexion = await reflexionar(memorias, noticias);
-  await guardarReflexion(reflexion);
+  const { reflexion, emocion } = await reflexionar(memorias, noticias);
+  await guardarReflexion(reflexion, emocion);
 }
 
 main().catch(console.error);
+```
+
+Guarda con Ctrl+S y luego:
+```
+cd C:\Users\mora_\tetsuo
+git add reflexion.js
+git commit -m "Tetsuo: emociones propias en reflexiones"
+git push
