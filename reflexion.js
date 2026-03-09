@@ -116,11 +116,3 @@ async function main() {
 }
 
 main().catch(console.error);
-```
-
-Ctrl+S y luego en PowerShell:
-```
-cd C:\Users\mora_\tetsuo
-git add reflexion.js
-git commit -m "Fix: emociones honestas con debug"
-git push
