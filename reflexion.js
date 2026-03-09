@@ -97,11 +97,3 @@ async function main() {
 }
 
 main().catch(console.error);
-```
-
-Guarda con Ctrl+S y luego:
-```
-cd C:\Users\mora_\tetsuo
-git add reflexion.js
-git commit -m "Tetsuo: reflexiones variadas sin repetir temas"
-git push
