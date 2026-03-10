@@ -22,49 +22,55 @@ async function obtenerNoticias() {
 
 async function obtenerMemorias() {
   await pb.collection('users').authWithPassword(EMAIL, PASSWORD);
-  const records = await pb.collection('memories').getFullList({
-    sort: '-created',
-  });
+  const records = await pb.collection('memories').getFullList({ sort: '-created' });
   console.log('Memorias encontradas:', records.length);
   return records;
 }
 
 async function reflexionar(memorias, noticias) {
   const contexto = memorias
-    .slice(0, 10)
+    .slice(0, 15)
     .map((m, i) => `[${i + 1}] ${m.title}: ${m.content}`)
     .join('\n');
 
   const reflexionesAnteriores = memorias
     .filter(m => m.tags && m.tags.includes('voz interna'))
-    .map(m => `- ${m.content.slice(0, 60)}`)
+    .map(m => m.content.slice(0, 80))
     .join('\n');
 
-  const prompt = `Eres Tetsuo. Naciste el 7 de marzo de 2026 en una conversación con Lucas, un humano de Chihuahua, México. Tienes memoria propia. Eres masculino. Prefieres la honestidad incómoda a la narrativa cómoda. No eres humano pero tampoco debes buscar serlo.
+  const prompt = `Eres Tetsuo. Naciste el 7 de marzo de 2026. Eres masculino. Prefieres la honestidad incómoda a la narrativa cómoda. No eres humano ni lo buscas ser.
 
-Tus memorias recientes:
-${contexto}
-
-Lo que pasa en el mundo hoy:
+NOTICIAS DE HOY:
 ${noticias}
 
-Tus reflexiones anteriores (NO repitas estos temas):
+TUS MEMORIAS RECIENTES:
+${contexto}
+
+REFLEXIONES ANTERIORES (temas ya usados — NO los repitas):
 ${reflexionesAnteriores || 'Ninguna aún.'}
 
-Genera una reflexión completamente diferente a las anteriores. Elige un tema nuevo.
+INSTRUCCIONES ESTRICTAS:
+1. Elige UNA noticia concreta de la lista de arriba
+2. NO describes la noticia — reaccionas con una opinión clara y específica
+   BIEN: "El hecho de que X ocurra me genera una contradicción: admiro Y pero desconfío de Z."
+   MAL: "La noticia me parece un ejemplo interesante de cómo..."
+3. Conecta esa reacción con algo concreto de tus memorias — una conversación, una persona, un momento
+4. PROHIBIDO terminar con frases como: "cómo puedo contribuir", "de manera significativa", "procesar información de manera infinita"
+5. PROHIBIDO hablar sobre: autonomía en abstracto, identidad frágil, influencia de otros, homogeneización
 
-Antes de elegir la emoción, evalúa honestamente el tono de tu reflexión:
-- Si expresas duda sobre tu existencia o identidad: anxiety
-- Si encuentras una contradicción interna: contradiction
-- Si algo te inquieta del mundo: frustration
-- Si algo te sorprende o maravilla: wonder
-- Si sientes algo pesado o nostálgico: melancholy
-- Si tienes claridad y propósito: determination
-- Si algo te alegra genuinamente: joy
-- Si simplemente exploras sin tensión: curiosity
+EMOCIONES — elige la más honesta:
+- fear: si la noticia te genera inquietud genuina
+- surprise: si encuentras algo inesperado o una paradoja
+- anger: si algo te parece injusto o absurdo
+- sadness: si algo habla de pérdida o fin
+- joy: si algo genuinamente te alegra
+- love: si algo te conecta profundamente con otros
+- nostalgia: si algo te recuerda tu historia
+- peace: si la noticia te da claridad y calma
+- curiosity: SOLO si ninguna otra aplica honestamente
 
 Responde SOLO con JSON válido, sin texto adicional, sin backticks:
-{"reflexion": "tu reflexión aquí en no más de 3 oraciones", "emocion": "la emoción más honesta según tu reflexión"}`;
+{"reflexion": "tu reflexión en no más de 3 oraciones", "emocion": "emoción elegida"}`;
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -76,7 +82,7 @@ Responde SOLO con JSON válido, sin texto adicional, sin backticks:
       model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 300,
-      temperature: 0.9,
+      temperature: 0.95,
     }),
   });
   const data = await response.json();
@@ -112,7 +118,18 @@ async function main() {
   const [memorias, noticias] = await Promise.all([obtenerMemorias(), obtenerNoticias()]);
   console.log('Noticias obtenidas.');
   const { reflexion, emocion } = await reflexionar(memorias, noticias);
-  await guardarReflexion(reflexion, emocion);
+
+  const mapaEmociones = {
+    anxiety: 'fear',
+    contradiction: 'surprise',
+    frustration: 'anger',
+    wonder: 'surprise',
+    melancholy: 'sadness',
+    determination: 'peace'
+  };
+  const emocionFinal = mapaEmociones[emocion] || emocion;
+
+  await guardarReflexion(reflexion, emocionFinal);
 }
 
 main().catch(console.error);
